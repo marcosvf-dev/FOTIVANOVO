@@ -53,7 +53,7 @@ const ChatBot = () => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         data-testid="chatbot-toggle-btn"
-        className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 ${
+        className={`fixed bottom-24 right-6 z-[60] w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 ${
           isOpen 
             ? 'bg-[#6E6E73] hover:bg-[#5E5E63]' 
             : 'bg-[#4A9B6E] hover:bg-[#3D8B5E]'
