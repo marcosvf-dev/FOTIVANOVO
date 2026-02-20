@@ -5,11 +5,15 @@ import '@/App.css';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import PWAInstallPrompt from '@/components/PWAInstallPrompt';
 
-// Pages
+// Pages - Public
 import LandingPage from '@/pages/LandingPage';
+import Funcionalidades from '@/pages/Funcionalidades';
+import Precos from '@/pages/Precos';
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
 import RecuperarSenha from '@/pages/RecuperarSenha';
+
+// Pages - Dashboard (Protected)
 import Dashboard from '@/pages/Dashboard';
 import Eventos from '@/pages/Eventos';
 import NovoEvento from '@/pages/NovoEvento';
@@ -25,10 +29,10 @@ function PrivateRoute({ children }) {
   
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F7]">
         <div className="text-center">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#4A9B6E] border-r-transparent"></div>
-          <p className="mt-4 text-gray-600">Carregando...</p>
+          <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-solid border-[#4A9B6E] border-r-transparent"></div>
+          <p className="mt-4 text-[#6E6E73]">Carregando...</p>
         </div>
       </div>
     );
@@ -42,8 +46,12 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Rotas Públicas */}
+          {/* Rotas Públicas - Landing Page */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/funcionalidades" element={<Funcionalidades />} />
+          <Route path="/precos" element={<Precos />} />
+          
+          {/* Rotas Públicas - Auth */}
           <Route path="/login" element={<Login />} />
           <Route path="/cadastro" element={<Register />} />
           <Route path="/recuperar-senha" element={<RecuperarSenha />} />
@@ -64,6 +72,9 @@ function App() {
           <Route path="/pagamentos" element={<PrivateRoute><Pagamentos /></PrivateRoute>} />
           <Route path="/galeria" element={<PrivateRoute><Galeria /></PrivateRoute>} />
           <Route path="/configuracoes" element={<PrivateRoute><Configuracoes /></PrivateRoute>} />
+          
+          {/* Redirect para home se rota não existir */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         
         <Toaster position="top-right" />
