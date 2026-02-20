@@ -1,9 +1,19 @@
 import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { 
+  LayoutDashboard, 
+  Calendar, 
+  Users, 
+  DollarSign, 
+  Image, 
+  Settings,
+  LogOut,
+  Camera
+} from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -12,12 +22,12 @@ const Sidebar = ({ isOpen, onClose }) => {
   };
 
   const menuItems = [
-    { path: '/dashboard', icon: '📊', label: 'Dashboard' },
-    { path: '/eventos', icon: '📅', label: 'Eventos' },
-    { path: '/clientes', icon: '👥', label: 'Clientes' },
-    { path: '/pagamentos', icon: '💰', label: 'Pagamentos' },
-    { path: '/galeria', icon: '📸', label: 'Galeria' },
-    { path: '/configuracoes', icon: '⚙️', label: 'Configurações' },
+    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/eventos', icon: Calendar, label: 'Eventos' },
+    { path: '/clientes', icon: Users, label: 'Clientes' },
+    { path: '/pagamentos', icon: DollarSign, label: 'Pagamentos' },
+    { path: '/galeria', icon: Image, label: 'Galeria' },
+    { path: '/configuracoes', icon: Settings, label: 'Configurações' },
   ];
 
   return (
@@ -25,15 +35,18 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Mobile Overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm"
           onClick={onClose}
+          data-testid="sidebar-overlay"
         />
       )}
 
       {/* Sidebar */}
       <aside
+        data-testid="sidebar"
         className={`
-          fixed top-0 left-0 h-full bg-[#2C3E50] text-white w-64 z-50
+          fixed top-0 left-0 h-full bg-white w-64 z-50
+          border-r border-gray-100 shadow-lg
           transform transition-transform duration-300 ease-in-out
           lg:translate-x-0
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
@@ -41,52 +54,83 @@ const Sidebar = ({ isOpen, onClose }) => {
       >
         <div className="flex flex-col h-full">
           {/* Logo/Header */}
-          <div className="p-6 border-b border-gray-700">
+          <div className="p-6 border-b border-gray-100">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-[#4A9B6E]">FOTIVA</h2>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-[#4A9B6E] rounded-xl flex items-center justify-center">
+                  <Camera className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-[#1D1D1F]" style={{ fontFamily: '-apple-system, BlinkMacSystemFont, SF Pro Display, Inter, sans-serif' }}>
+                    FOTIVA
+                  </h2>
+                  <p className="text-xs text-[#6E6E73]">Gestão Fotográfica</p>
+                </div>
+              </div>
               {/* Close button (mobile only) */}
               <button
                 onClick={onClose}
-                className="lg:hidden text-white hover:text-gray-300"
+                className="lg:hidden text-[#6E6E73] hover:text-[#1D1D1F] p-1"
+                data-testid="sidebar-close-btn"
               >
-                <span className="text-2xl">×</span>
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <p className="text-sm text-gray-400 mt-1">Gestão Fotográfica</p>
           </div>
 
           {/* Navigation */}
           <nav className="flex-1 p-4 overflow-y-auto">
-            <ul className="space-y-2">
-              {menuItems.map((item) => (
-                <li key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    onClick={onClose}
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-[#4A9B6E] text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      }`
-                    }
-                  >
-                    <span className="text-xl">{item.icon}</span>
-                    <span className="font-medium">{item.label}</span>
-                  </NavLink>
-                </li>
-              ))}
+            <ul className="space-y-1">
+              {menuItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <li key={item.path}>
+                    <NavLink
+                      to={item.path}
+                      onClick={onClose}
+                      data-testid={`sidebar-nav-${item.label.toLowerCase()}`}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                          isActive
+                            ? 'bg-[#4A9B6E] text-white shadow-md'
+                            : 'text-[#6E6E73] hover:bg-[#E8F5EE] hover:text-[#4A9B6E]'
+                        }`
+                      }
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium text-sm">{item.label}</span>
+                    </NavLink>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
 
-          {/* Logout Button */}
-          <div className="p-4 border-t border-gray-700">
+          {/* User Section & Logout */}
+          <div className="p-4 border-t border-gray-100">
+            {/* User Info */}
+            {user && (
+              <div className="flex items-center gap-3 px-4 py-3 mb-2 bg-[#F5F5F7] rounded-xl">
+                <div className="w-10 h-10 bg-[#4A9B6E] rounded-full flex items-center justify-center text-white font-medium text-sm">
+                  {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[#1D1D1F] truncate">{user.name || 'Usuário'}</p>
+                  <p className="text-xs text-[#6E6E73] truncate">{user.email}</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-red-600 hover:text-white transition-colors"
+              data-testid="sidebar-logout-btn"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[#6E6E73] hover:bg-red-50 hover:text-red-600 transition-all duration-200"
             >
-              <span className="text-xl">🚪</span>
-              <span className="font-medium">Sair</span>
+              <LogOut className="w-5 h-5" />
+              <span className="font-medium text-sm">Sair</span>
             </button>
           </div>
         </div>
