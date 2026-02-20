@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone, timedelta
-import bcrypt  # Usar bcrypt diretamente
+from passlib.context import CryptContext
 from jose import JWTError, jwt
 import random
 import string
@@ -23,7 +23,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # 7 days
 
-# Usar bcrypt diretamente (sem passlib)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 # MongoDB connection
@@ -206,34 +206,24 @@ class MercadoPagoWebhook(BaseModel):
 # ============== AUTH FUNCTIONS ==============
 
 def verify_password(plain_password, hashed_password):
-    """Verifica senha usando bcrypt diretamente"""
+    """Verifica senha limitando a 72 bytes (limite do bcrypt)"""
+    # Bcrypt tem limite de 72 bytes
+    if len(plain_password.encode('utf-8')) > 72:
+        plain_password = plain_password[:72]
+    
     try:
-        # Trunca senha em 72 bytes (limite do bcrypt)
-        password_bytes = plain_password.encode('utf-8')
-        if len(password_bytes) > 72:
-            password_bytes = password_bytes[:72]
-        
-        # Verifica usando bcrypt direto
-        return bcrypt.checkpw(password_bytes, hashed_password.encode('utf-8'))
-    except Exception as e:
+        return pwd_context.verify(plain_password, hashed_password)
+    except ValueError as e:
         print(f"❌ Erro ao verificar senha: {e}")
         return False
 
 def get_password_hash(password):
-    """Cria hash da senha usando bcrypt diretamente"""
-    try:
-        # Trunca senha em 72 bytes (limite do bcrypt)
-        password_bytes = password.encode('utf-8')
-        if len(password_bytes) > 72:
-            password_bytes = password_bytes[:72]
-        
-        # Gera hash usando bcrypt direto
-        salt = bcrypt.gensalt(rounds=12)
-        hashed = bcrypt.hashpw(password_bytes, salt)
-        return hashed.decode('utf-8')
-    except Exception as e:
-        print(f"❌ Erro ao criar hash de senha: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao processar senha")
+    """Cria hash da senha limitando a 72 bytes (limite do bcrypt)"""
+    # Bcrypt tem limite de 72 bytes
+    if len(password.encode('utf-8')) > 72:
+        password = password[:72]
+    
+    return pwd_context.hash(password)
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -581,12 +571,10 @@ async def get_galleries(current_user: User = Depends(get_current_user)):
 async def get_dashboard_stats(current_user: User = Depends(get_current_user)):
     clients = await db.clients.find({"user_id": current_user.id}, {"_id": 0}).to_list(1000)
     events = await db.events.find({"user_id": current_user.id}, {"_id": 0}).to_list(1000)
+    payments = await db.payments.find({"user_id": current_user.id}, {"_id": 0}).to_list(1000)
     
-    # Calcular receita usando amount_paid dos eventos (não payments collection)
-    total_revenue = sum(e.get('amount_paid', 0) for e in events)
-    
-    # Calcular pagamentos pendentes (total_value - amount_paid)
-    pending_payments = sum(e.get('total_value', 0) - e.get('amount_paid', 0) for e in events)
+    total_revenue = sum(p['amount'] for p in payments if p.get('paid', False))
+    pending_payments = sum(p['amount'] for p in payments if not p.get('paid', False))
     
     # Get upcoming events (next 5)
     upcoming = sorted(

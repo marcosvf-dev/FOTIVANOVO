@@ -9,3 +9,8 @@ root.render(
     <App />
   </React.StrictMode>,
 );
+
+// Service Worker desabilitado para evitar conflitos
+// import * as serviceWorkerRegistration from '@/serviceWorkerRegistration';
+// serviceWorkerRegistration.register();
+
