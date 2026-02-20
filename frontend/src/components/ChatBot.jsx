@@ -71,7 +71,7 @@ const ChatBot = () => {
       {isOpen && (
         <div 
           data-testid="chatbot-window"
-          className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-100"
+          className="fixed bottom-40 right-6 z-[60] w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-100"
           style={{ height: '500px' }}
         >
           {/* Header */}
