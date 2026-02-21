@@ -70,7 +70,7 @@ const Eventos = () => {
   const filteredEventos = eventos.filter(evento => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      evento.name?.toLowerCase().includes(searchLower) ||
+      evento.event_type?.toLowerCase().includes(searchLower) ||
       evento.client_name?.toLowerCase().includes(searchLower) ||
       evento.location?.toLowerCase().includes(searchLower)
     );
@@ -78,8 +78,17 @@ const Eventos = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Data não definida';
-    const [year, month, day] = dateString.split('-');
-    return `${day}/${month}/${year}`;
+    // Suporta formato ISO (2025-02-06T14:00:00) e simples (2025-02-06)
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Data inválida';
+    return date.toLocaleDateString('pt-BR');
+  };
+
+  const formatTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
 
   const formatCurrency = (value) => {
@@ -152,7 +161,7 @@ const Eventos = () => {
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
             <p className="text-sm text-gray-600">Total Recebido</p>
             <p className="text-2xl font-bold text-blue-600 mt-1">
-              {formatCurrency(eventos.reduce((sum, e) => sum + (e.paid_amount || 0), 0))}
+              {formatCurrency(eventos.reduce((sum, e) => sum + (e.amount_paid || 0), 0))}
             </p>
           </div>
         </div>
@@ -189,8 +198,10 @@ const Eventos = () => {
         ) : (
           <div className="grid gap-4">
             {filteredEventos.map((evento) => {
-              const porcentagemPaga = calcularPorcentagemPaga(evento.total_value, evento.paid_amount);
-              const valorRestante = (evento.total_value || 0) - (evento.paid_amount || 0);
+              const paidAmount = evento.amount_paid || 0;
+              const totalValue = evento.total_value || 0;
+              const porcentagemPaga = calcularPorcentagemPaga(totalValue, paidAmount);
+              const valorRestante = totalValue - paidAmount;
 
               return (
                 <div key={evento.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -199,11 +210,11 @@ const Eventos = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <h3 className="text-xl font-semibold text-gray-900 mb-1">
-                          {evento.name}
+                          {evento.event_type || 'Sem tipo definido'}
                         </h3>
                         <div className="flex items-center gap-2 text-gray-600 text-sm">
                           <User size={16} />
-                          <span>{evento.client_name}</span>
+                          <span>{evento.client_name || 'Cliente não informado'}</span>
                         </div>
                       </div>
                       <div className="flex gap-2">
@@ -228,7 +239,10 @@ const Eventos = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="flex items-center gap-2 text-gray-600">
                         <Calendar size={16} />
-                        <span className="text-sm">{formatDate(evento.date)} às {evento.time}</span>
+                        <span className="text-sm">
+                          {formatDate(evento.event_date)}
+                          {evento.event_date && formatTime(evento.event_date) && ` às ${formatTime(evento.event_date)}`}
+                        </span>
                       </div>
                       {evento.location && (
                         <div className="flex items-center gap-2 text-gray-600">
@@ -244,13 +258,13 @@ const Eventos = () => {
                         <div>
                           <p className="text-gray-600 mb-1">Valor Total</p>
                           <p className="font-semibold text-gray-900">
-                            {formatCurrency(evento.total_value)}
+                            {formatCurrency(totalValue)}
                           </p>
                         </div>
                         <div>
                           <p className="text-gray-600 mb-1">Já Pago</p>
                           <p className="font-semibold text-green-600">
-                            {formatCurrency(evento.paid_amount)}
+                            {formatCurrency(paidAmount)}
                           </p>
                         </div>
                         <div>
